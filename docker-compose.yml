@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      LOCOGUESS_DATABASE_URL: "sqlite:///./data/locoguess.db"
+      LOCOGUESS_PHOTOS_DIR: "/app/photos"
+      LOCOGUESS_CORS_ORIGINS: '["http://localhost"]'
+    volumes:
+      - db-data:/app/data
+      - photos:/app/photos
+    expose:
+      - "8000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
+  photos:
