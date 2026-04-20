@@ -173,6 +173,59 @@ class TestTeamEndpoints:
         ).json()
         assert p2["is_captain"] is False
 
+    def test_rename_player(self, client):
+        game = self._create_game(client)
+        teams = client.get(f"/api/v1/games/{game['join_code']}/teams").json()
+        tid = teams[0]["id"]
+        p = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/{tid}/join",
+            json={"nickname": "Alice"},
+        ).json()
+        resp = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/rename",
+            json={"session_id": p["session_id"], "nickname": "Bob"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["nickname"] == "Bob"
+        assert resp.json()["id"] == p["id"]  # same player row, not a new one
+
+    def test_join_idempotent_by_session(self, client):
+        """Re-joining with the same session_id + new nickname updates in place, no duplicate."""
+        game = self._create_game(client)
+        teams = client.get(f"/api/v1/games/{game['join_code']}/teams").json()
+        tid = teams[0]["id"]
+        p1 = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/{tid}/join",
+            json={"nickname": "Alice"},
+        ).json()
+        # Re-join same team, new nickname, passing session_id — should rename, not create
+        p2 = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/{tid}/join",
+            json={"nickname": "Bob", "session_id": p1["session_id"]},
+        ).json()
+        assert p2["id"] == p1["id"]
+        assert p2["nickname"] == "Bob"
+        team_after = client.get(f"/api/v1/games/{game['join_code']}/teams").json()[0]
+        assert len(team_after["players"]) == 1
+
+    def test_rename_conflict(self, client):
+        game = self._create_game(client)
+        teams = client.get(f"/api/v1/games/{game['join_code']}/teams").json()
+        tid = teams[0]["id"]
+        p1 = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/{tid}/join",
+            json={"nickname": "Alice"},
+        ).json()
+        client.post(
+            f"/api/v1/games/{game['join_code']}/teams/{tid}/join",
+            json={"nickname": "Bob"},
+        )
+        resp = client.post(
+            f"/api/v1/games/{game['join_code']}/teams/rename",
+            json={"session_id": p1["session_id"], "nickname": "Bob"},
+        )
+        assert resp.status_code == 409
+
 
 class TestRoundEndpoints:
     def _setup_game_with_pack(self, client) -> tuple[dict, list]:

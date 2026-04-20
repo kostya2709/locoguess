@@ -10,10 +10,16 @@ class TeamCreate(BaseModel):
 
 class PlayerJoin(BaseModel):
     nickname: str = Field(max_length=30)
+    session_id: str | None = None
 
 
 class PlayerSwitch(BaseModel):
     session_id: str
+
+
+class PlayerRename(BaseModel):
+    session_id: str
+    nickname: str = Field(max_length=30)
 
 
 class PlayerResponse(BaseModel):

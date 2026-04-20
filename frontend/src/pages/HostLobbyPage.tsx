@@ -26,9 +26,13 @@ export function HostLobbyPage() {
   const [noGame, setNoGame] = useState(false);
 
   // Editable settings
-  const [teamCount, setTeamCount] = useState(2);
-  const [teamNames, setTeamNames] = useState<string[]>(['Красные', 'Синие']);
+  const [teamCount, setTeamCount] = useState(4);
+  const [teamCountStr, setTeamCountStr] = useState('4');
+  const [teamNames, setTeamNames] = useState<string[]>(
+    TEAM_DEFAULTS.slice(0, 4).map((t) => t.name),
+  );
   const [roundDuration, setRoundDuration] = useState(60);
+  const [roundDurationStr, setRoundDurationStr] = useState('60');
   const [streetViewEnabled, setStreetViewEnabled] = useState(false);
   const [musicHost, setMusicHost] = useState(true);
   const [musicGuests, setMusicGuests] = useState(false);
@@ -49,8 +53,10 @@ export function HostLobbyPage() {
           // Initialize editable settings from server on first load
           if (!settingsLoaded) {
             setTeamCount(s.teams.length);
+            setTeamCountStr(String(s.teams.length));
             setTeamNames(s.teams.map((t) => t.name));
             setRoundDuration(s.round_duration);
+            setRoundDurationStr(String(s.round_duration));
             setStreetViewEnabled(s.street_view_enabled);
             setMusicHost(s.music_host);
             setMusicGuests(s.music_guests);
@@ -185,8 +191,19 @@ export function HostLobbyPage() {
                   type="number"
                   min={1}
                   max={8}
-                  value={teamCount}
-                  onChange={(e) => handleTeamCountChange(Number(e.target.value) || 1)}
+                  value={teamCountStr}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTeamCountStr(v);
+                    const n = parseInt(v, 10);
+                    if (!isNaN(n) && n >= 1 && n <= 8) handleTeamCountChange(n);
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(teamCountStr, 10);
+                    const clamped = isNaN(n) ? teamCount : Math.max(1, Math.min(8, n));
+                    setTeamCountStr(String(clamped));
+                    if (clamped !== teamCount) handleTeamCountChange(clamped);
+                  }}
                 />
               </label>
               <div className="team-names-config">
@@ -213,8 +230,19 @@ export function HostLobbyPage() {
                   min={10}
                   max={300}
                   step={10}
-                  value={roundDuration}
-                  onChange={(e) => setRoundDuration(Math.max(10, Math.min(300, Number(e.target.value) || 60)))}
+                  value={roundDurationStr}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setRoundDurationStr(v);
+                    const n = parseInt(v, 10);
+                    if (!isNaN(n) && n >= 10 && n <= 300) setRoundDuration(n);
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(roundDurationStr, 10);
+                    const clamped = isNaN(n) ? roundDuration : Math.max(10, Math.min(300, n));
+                    setRoundDurationStr(String(clamped));
+                    if (clamped !== roundDuration) setRoundDuration(clamped);
+                  }}
                 />
               </label>
               <label className="checkbox-label">

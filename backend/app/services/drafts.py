@@ -39,6 +39,11 @@ def get_team_drafts(round_id: str, team_player_ids: set[str]) -> list[DraftMarke
     return [m for pid, m in round_drafts.items() if pid in team_player_ids]
 
 
+def get_round_drafts(round_id: str) -> dict[str, DraftMarker]:
+    """Return all drafts for a round keyed by player_id. Empty dict if none."""
+    return dict(_drafts.get(round_id, {}))
+
+
 def clear_round(round_id: str):
     """Clear all drafts for a round (called when round ends)."""
     _drafts.pop(round_id, None)

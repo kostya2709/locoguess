@@ -23,7 +23,7 @@ export function HostSetupPage() {
       const game = await api.createGame({
         name: pack?.name || 'Новая игра',
         pack_id: packId,
-        team_count: 2,
+        team_count: 4,
         round_duration: 60,
       });
       localStorage.setItem(`locoguess_host_${GAME_CODE}`, game.host_secret);

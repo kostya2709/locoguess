@@ -207,10 +207,10 @@ export const api = {
     return request<Team[]>(`/games/${joinCode}/teams`);
   },
 
-  joinTeam(joinCode: string, teamId: string, nickname: string) {
+  joinTeam(joinCode: string, teamId: string, nickname: string, sessionId?: string) {
     return request<Player>(`/games/${joinCode}/teams/${teamId}/join`, {
       method: 'POST',
-      body: JSON.stringify({ nickname }),
+      body: JSON.stringify({ nickname, session_id: sessionId }),
     });
   },
 
@@ -218,6 +218,13 @@ export const api = {
     return request<import('../types/game').Player>(`/games/${joinCode}/teams/${newTeamId}/switch`, {
       method: 'POST',
       body: JSON.stringify({ session_id: sessionId }),
+    });
+  },
+
+  renamePlayer(joinCode: string, sessionId: string, nickname: string) {
+    return request<import('../types/game').Player>(`/games/${joinCode}/teams/rename`, {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, nickname }),
     });
   },
 

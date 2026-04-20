@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Game, GameStatus, Player, Team
-from app.schemas.team import PlayerJoin, PlayerResponse, PlayerSwitch, TeamCreate, TeamResponse
+from app.schemas.team import PlayerJoin, PlayerRename, PlayerResponse, PlayerSwitch, TeamCreate, TeamResponse
 
 router = APIRouter(prefix="/api/v1/games/{join_code}/teams", tags=["teams"])
 
@@ -59,35 +59,64 @@ def create_team(join_code: str, body: TeamCreate, db: Session = Depends(get_db))
     return team
 
 
+def _update_existing_player(
+    player: Player, target_team: Team, nickname: str, game_id: str, db: Session
+) -> Player:
+    """Update an existing player's name/team in place; return the player."""
+    if player.nickname != nickname:
+        conflict = (
+            db.query(Player).join(Team)
+            .filter(
+                Team.game_id == game_id,
+                Player.nickname == nickname,
+                Player.id != player.id,
+            )
+            .first()
+        )
+        if conflict:
+            raise HTTPException(status_code=409, detail="Nickname already taken")
+        player.nickname = nickname
+    if player.team_id != target_team.id:
+        _move_player_to_team(player, target_team, db)
+    else:
+        _ensure_captain(target_team.id, db)
+        db.commit()
+        db.refresh(player)
+    return player
+
+
 @router.post("/{team_id}/join", response_model=PlayerResponse, status_code=201)
 def join_team(join_code: str, team_id: str, body: PlayerJoin, db: Session = Depends(get_db)):
-    """Join an existing team as a player. First player becomes captain."""
+    """Join an existing team. If caller provides a session_id of an existing
+    player in this game, update that player in place instead of creating a new
+    one (prevents duplicates when a tab re-joins after rename)."""
     game = _get_game_in_lobby(join_code, db)
     team = db.query(Team).filter_by(id=team_id, game_id=game.id).first()
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
 
-    # Check if this nickname already exists in the game
+    nickname = body.nickname.strip()
+    if not nickname:
+        raise HTTPException(status_code=400, detail="Nickname cannot be empty")
+
+    # 1. If caller identifies themselves, update their existing player in place.
+    if body.session_id:
+        mine = db.query(Player).filter_by(session_id=body.session_id).first()
+        if mine and mine.team.game_id == game.id:
+            return _update_existing_player(mine, team, nickname, game.id, db)
+
+    # 2. Otherwise dedup by nickname within this game.
     existing = (
-        db.query(Player)
-        .join(Team)
-        .filter(Team.game_id == game.id, Player.nickname == body.nickname)
+        db.query(Player).join(Team)
+        .filter(Team.game_id == game.id, Player.nickname == nickname)
         .first()
     )
     if existing:
-        if existing.team_id == team.id:
-            # Same team — ensure captain status is correct and return
-            _ensure_captain(team.id, db)
-            db.commit()
-            db.refresh(existing)
-            return existing
-        else:
-            # Different team — move them (switch)
-            _move_player_to_team(existing, team, db)
-            return existing
+        return _update_existing_player(existing, team, nickname, game.id, db)
 
+    # 3. New player.
     is_captain = len(team.players) == 0
-    player = Player(team_id=team.id, nickname=body.nickname, is_captain=is_captain)
+    player = Player(team_id=team.id, nickname=nickname, is_captain=is_captain)
     db.add(player)
     db.commit()
     db.refresh(player)
@@ -110,6 +139,34 @@ def switch_team(join_code: str, team_id: str, body: PlayerSwitch, db: Session = 
         raise HTTPException(status_code=400, detail="Already on this team")
 
     _move_player_to_team(player, new_team, db)
+    return player
+
+
+@router.post("/rename", response_model=PlayerResponse)
+def rename_player(join_code: str, body: PlayerRename, db: Session = Depends(get_db)):
+    """Rename a player by session_id. Only allowed while the game is in lobby."""
+    game = _get_game_in_lobby(join_code, db)
+    player = db.query(Player).filter_by(session_id=body.session_id).first()
+    if not player or player.team.game_id != game.id:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    new_nick = body.nickname.strip()
+    if not new_nick:
+        raise HTTPException(status_code=400, detail="Nickname cannot be empty")
+    if new_nick == player.nickname:
+        return player
+
+    conflict = (
+        db.query(Player).join(Team)
+        .filter(Team.game_id == game.id, Player.nickname == new_nick, Player.id != player.id)
+        .first()
+    )
+    if conflict:
+        raise HTTPException(status_code=409, detail="Nickname already taken")
+
+    player.nickname = new_nick
+    db.commit()
+    db.refresh(player)
     return player
 
 

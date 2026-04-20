@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.models import Game, GameStatus, Guess, Round, RoundStatus
 from app.schemas.guess import GuessResponse, ScoreboardEntry
-from app.services.drafts import clear_round
+from app.services.drafts import clear_round, get_round_drafts
+from app.services.scoring import calculate_score, haversine_km
 from app.utils import get_photo_urls
 from app.ws.manager import manager
 
@@ -133,6 +134,34 @@ async def check_all_guessed(game_id: str, join_code: str, round_number: int, db:
         await end_round(game_id, join_code, round_number, db)
 
 
+def _autosubmit_from_drafts(game: Game, round_: Round, db: Session):
+    """For teams without a submitted guess, use captain's last draft marker."""
+    drafts = get_round_drafts(round_.id)
+    if not drafts:
+        return
+    submitted_team_ids = {g.team_id for g in round_.guesses}
+    for team in game.teams:
+        if team.id in submitted_team_ids:
+            continue
+        captain = next((p for p in team.players if p.is_captain), None)
+        if not captain:
+            continue
+        marker = drafts.get(captain.id)
+        if not marker:
+            continue
+        distance = haversine_km(marker.lat, marker.lng, round_.correct_lat, round_.correct_lng)
+        db.add(Guess(
+            round_id=round_.id,
+            team_id=team.id,
+            lat=marker.lat,
+            lng=marker.lng,
+            distance_km=round(distance, 2),
+            score=calculate_score(distance),
+        ))
+    db.commit()
+    db.refresh(round_)
+
+
 async def end_round(game_id: str, join_code: str, round_number: int, db: Session):
     """Reveal results for a round."""
     _timers.pop(game_id, None)
@@ -142,6 +171,8 @@ async def end_round(game_id: str, join_code: str, round_number: int, db: Session
 
     if round_.status != RoundStatus.GUESSING:
         return
+
+    _autosubmit_from_drafts(game, round_, db)
 
     round_.status = RoundStatus.REVEALING
     db.commit()

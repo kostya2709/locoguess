@@ -40,6 +40,19 @@ export function JoinPage() {
     ),
   });
 
+  // Restore existing session for this tab (sessionStorage preferred, localStorage fallback for new tabs)
+  useEffect(() => {
+    const saved = sessionStorage.getItem(`locoguess_session_${GAME_CODE}`)
+      || localStorage.getItem(`locoguess_session_${GAME_CODE}`);
+    if (saved) {
+      try {
+        setPlayer(JSON.parse(saved) as Player);
+      } catch {
+        clearStoredSession();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const poll = () =>
       api.getGameStatus(GAME_CODE)
@@ -50,6 +63,27 @@ export function JoinPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // If the stored player no longer exists in the game (host wiped game, etc.), clear session
+  useEffect(() => {
+    if (!player || !gameStatus) return;
+    const stillPresent = gameStatus.teams.some((t) => t.players.some((pl) => pl.id === player.id));
+    if (!stillPresent) {
+      clearStoredSession();
+      setPlayer(null);
+    }
+  }, [player, gameStatus]);
+
+  function persistSession(p: Player) {
+    sessionStorage.setItem(`locoguess_session_${GAME_CODE}`, JSON.stringify(p));
+    sessionStorage.setItem(`locoguess_role_${GAME_CODE}`, 'player');
+    localStorage.setItem(`locoguess_session_${GAME_CODE}`, JSON.stringify(p));
+  }
+
+  function clearStoredSession() {
+    sessionStorage.removeItem(`locoguess_session_${GAME_CODE}`);
+    localStorage.removeItem(`locoguess_session_${GAME_CODE}`);
+  }
+
   async function handleJoinTeam(teamId: string) {
     if (!nickname) {
       setError('Сначала введите имя');
@@ -57,11 +91,19 @@ export function JoinPage() {
     }
     setError('');
     try {
-      const p = await api.joinTeam(GAME_CODE, teamId, nickname);
+      const storedRaw = sessionStorage.getItem(`locoguess_session_${GAME_CODE}`)
+        || localStorage.getItem(`locoguess_session_${GAME_CODE}`);
+      let existingSid: string | undefined;
+      if (storedRaw) {
+        try { existingSid = (JSON.parse(storedRaw) as Player).session_id; } catch {}
+      }
+      const p = await api.joinTeam(GAME_CODE, teamId, nickname, existingSid);
+      persistSession(p);
+      // Fetch fresh status BEFORE setPlayer so the stale-session check doesn't
+      // fire against a gameStatus that still predates this player.
+      const status = await api.getGameStatus(GAME_CODE);
+      setGameStatus(status);
       setPlayer(p);
-      sessionStorage.setItem(`locoguess_session_${GAME_CODE}`, JSON.stringify(p));
-      sessionStorage.setItem(`locoguess_role_${GAME_CODE}`, 'player');
-      api.getGameStatus(GAME_CODE).then(setGameStatus);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться');
     }
@@ -72,9 +114,10 @@ export function JoinPage() {
     setError('');
     try {
       const updated = await api.switchTeam(GAME_CODE, newTeamId, player.session_id);
+      persistSession(updated);
+      const status = await api.getGameStatus(GAME_CODE);
+      setGameStatus(status);
       setPlayer(updated);
-      sessionStorage.setItem(`locoguess_session_${GAME_CODE}`, JSON.stringify(updated));
-      api.getGameStatus(GAME_CODE).then(setGameStatus);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось сменить команду');
     }

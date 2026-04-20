@@ -26,9 +26,24 @@ export function GamePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [streetViewEnabled, setStreetViewEnabled] = useState(false);
   const lastFetchedRoundRef = useRef<string>('');
+  const [browserFullscreen, setBrowserFullscreen] = useState(false);
 
   const isHost = !!localStorage.getItem(`locoguess_host_${GAME_CODE}`)
     && sessionStorage.getItem(`locoguess_role_${GAME_CODE}`) !== 'player';
+
+  useEffect(() => {
+    const sync = () => setBrowserFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+
+  function toggleBrowserFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
 
   // Restore player session and fetch team info
   useEffect(() => {
@@ -277,6 +292,13 @@ export function GamePage() {
             🔇
           </button>
         )}
+        <button
+          className="menu-btn"
+          onClick={toggleBrowserFullscreen}
+          title={browserFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
+        >
+          {browserFullscreen ? '⤡' : '⛶'}
+        </button>
         <button
           className="menu-btn"
           onClick={() => setMenuOpen(!menuOpen)}

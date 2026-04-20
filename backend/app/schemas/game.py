@@ -8,7 +8,7 @@ from app.models.game import GameStatus, RoundStatus
 class GameCreate(BaseModel):
     name: str = Field(default="New Game", max_length=100)
     pack_id: str | None = None  # If set, auto-creates rounds from this pack
-    team_count: int = Field(default=2, ge=1, le=8)
+    team_count: int = Field(default=4, ge=1, le=8)
     team_names: list[str] | None = None  # Optional custom names; length must match team_count
     round_duration: int = Field(default=60, ge=10, le=300)
     # Only used when pack_id is None (custom game)

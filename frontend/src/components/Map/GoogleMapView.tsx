@@ -10,12 +10,16 @@ import type { GameMapProps } from './types';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-/** Colored circle marker for teams. */
+/** Colored circle marker for teams. Shifted down so the circle's center
+ * (not its bottom) sits at the AdvancedMarker's lat/lng anchor. */
 function CircleMarker({ color, size = 16, opacity = 1, dashed = false, label }: {
   color: string; size?: number; opacity?: number; dashed?: boolean; label?: string;
 }) {
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{
+      position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      transform: `translateY(${size / 2}px)`,
+    }}>
       {label && <div className="gmap-marker-label">{label}</div>}
       <div style={{
         width: size, height: size, borderRadius: '50%', background: color,
@@ -31,6 +35,7 @@ function CorrectMarker() {
     <div style={{
       width: 22, height: 22, borderRadius: '50%', background: '#facc15',
       border: '3px solid #a16207', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+      transform: 'translateY(11px)',
     }} />
   );
 }
