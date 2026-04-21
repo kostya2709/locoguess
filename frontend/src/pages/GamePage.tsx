@@ -45,8 +45,11 @@ export function GamePage() {
     }
   }
 
-  // Restore player session and fetch team info
+  // Restore player session and fetch team info.
+  // Skip on the host tab — localStorage is shared across tabs, so a host tab
+  // would otherwise pick up a player session written by a different tab.
   useEffect(() => {
+    if (isHost) return;
     const saved = sessionStorage.getItem(`locoguess_session_${GAME_CODE}`)
       || localStorage.getItem(`locoguess_session_${GAME_CODE}`);
     if (saved) {
@@ -57,7 +60,7 @@ export function GamePage() {
         if (team) setMyTeam({ name: team.name, color: team.color });
       }).catch(() => {});
     }
-  }, []);
+  }, [isHost]);
 
   // Close menu on Esc
   useEffect(() => {

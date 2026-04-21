@@ -14,53 +14,55 @@ interface Options {
 export function useRoundMusic({ musicUrl, shouldPlay, paused, isRevealing }: Options) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const wantPlayRef = useRef(false);
 
-  // Track whether we WANT to be playing right now
-  wantPlayRef.current = !!musicUrl && shouldPlay && !paused && !isRevealing;
-
-  // Create audio element when URL changes
+  // Swap audio element when the URL changes.
   useEffect(() => {
-    // Cleanup old audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
+    if (!musicUrl || !shouldPlay) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      setBlocked(false);
+      return;
     }
-    setBlocked(false);
-
-    if (!musicUrl || !shouldPlay) return;
 
     const audio = new Audio(musicUrl);
     audio.loop = true;
     audio.volume = 0.5;
     audioRef.current = audio;
 
-    // Try to play immediately
-    if (wantPlayRef.current) {
-      audio.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
-    }
-
     return () => {
       audio.pause();
       audio.src = '';
-      audioRef.current = null;
+      if (audioRef.current === audio) audioRef.current = null;
     };
   }, [musicUrl, shouldPlay]);
 
-  // React to pause/resume/reveal changes
+  // Play / pause in response to state, including right after a swap.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (paused || isRevealing) {
+    if (paused || isRevealing || !shouldPlay) {
       audio.pause();
-    } else if (shouldPlay) {
-      audio.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
+      return;
     }
-  }, [paused, isRevealing, shouldPlay]);
 
-  // Manual unblock: called by clicking the 🔇 button
+    let cancelled = false;
+    audio.play().then(
+      () => { if (!cancelled) setBlocked(false); },
+      (err) => {
+        if (cancelled) return;
+        // AbortError fires when our own cleanup interrupts a pending play;
+        // that doesn't mean autoplay was blocked.
+        if (err?.name === 'AbortError') return;
+        setBlocked(true);
+      },
+    );
+    return () => { cancelled = true; };
+  }, [musicUrl, paused, isRevealing, shouldPlay]);
+
   const unblock = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
