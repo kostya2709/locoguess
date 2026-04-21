@@ -64,21 +64,25 @@ function createDraftIcon(color: string, isCaptain: boolean) {
   });
 }
 
+const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAX_ZOOM = Number(import.meta.env.VITE_MAX_ZOOM) || 18;
+
 export function LeafletMap({ guessPosition, onPositionChange, revealData, teamColor, teamDrafts, currentPlayerId, currentPlayerNickname, isCaptain }: GameMapProps) {
   return (
     <MapContainer
       center={[62, 95]}
       zoom={3}
       minZoom={3}
-      maxZoom={18}
+      maxZoom={MAX_ZOOM}
       className="guess-map"
       style={{ height: '100%', width: '100%' }}
       attributionControl={false}
     >
       <ResizeHandler />
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={import.meta.env.VITE_TILE_URL ? '' : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
+        url={TILE_URL}
+        maxZoom={MAX_ZOOM}
         noWrap={true}
       />
 

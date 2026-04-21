@@ -22,6 +22,9 @@ frontend/dist/
 .env
 .env.local
 
+# Offline mode — downloaded OSM tiles (can be many GB)
+offline/tiles/
+
 # OS
 .DS_Store
 Thumbs.db

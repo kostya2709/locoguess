@@ -1,0 +1,19 @@
+# Offline override. Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
+# Or run ./run-offline.sh which wraps that.
+#
+# What this does vs the online setup:
+#   - Forces Leaflet (no Google Maps — it can't run offline).
+#   - Points Leaflet at locally-served tiles under /tiles/.
+#   - Mounts ./offline/tiles into the nginx container read-only.
+#   - Caps max zoom at what the downloaded tiles actually cover.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_MAP_PROVIDER: leaflet
+        VITE_TILE_URL: /tiles/{z}/{x}/{y}.png
+        VITE_MAX_ZOOM: "8"
+    volumes:
+      - ./offline/tiles:/usr/share/nginx/html/tiles:ro

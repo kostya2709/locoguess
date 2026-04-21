@@ -20,6 +20,8 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, 
 
 const MAP_PROVIDER = import.meta.env.VITE_MAP_PROVIDER || 'leaflet';
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const TILE_URL = import.meta.env.VITE_TILE_URL || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAX_ZOOM = Number(import.meta.env.VITE_MAX_ZOOM) || 18;
 
 interface Props {
   position: [number, number] | null;
@@ -35,8 +37,8 @@ function LeafletClickHandler({ onClick }: { onClick: (lat: number, lng: number) 
 
 function LeafletPicker({ position, onPositionChange, height = '250px' }: Props) {
   return (
-    <MapContainer center={position || [62, 95]} zoom={position ? 8 : 3} minZoom={3} maxZoom={18} style={{ height, width: '100%' }} attributionControl={false}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" noWrap={true} />
+    <MapContainer center={position || [62, 95]} zoom={position ? 8 : 3} minZoom={3} maxZoom={MAX_ZOOM} style={{ height, width: '100%' }} attributionControl={false}>
+      <TileLayer url={TILE_URL} maxZoom={MAX_ZOOM} noWrap={true} />
       <LeafletClickHandler onClick={(lat, lng) => onPositionChange([lat, lng])} />
       {position && <Marker position={position} />}
     </MapContainer>
