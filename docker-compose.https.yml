@@ -16,6 +16,10 @@ services:
       LOCOGUESS_CORS_ORIGINS: '["https://locoguess.ru","https://www.locoguess.ru","http://locoguess.ru","http://www.locoguess.ru"]'
 
   frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_MAP_PROVIDER: google
     ports:
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
