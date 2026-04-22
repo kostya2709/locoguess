@@ -36,3 +36,6 @@ alembic/versions/__pycache__/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# TLS certificates (deployment-specific, contain private keys)
+certs/
