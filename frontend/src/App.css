@@ -842,6 +842,9 @@
     grid-template-rows: 40vh 40vh;
     gap: 0.5rem;
     flex: none;
+    /* Side gutters on mobile so users can scroll the page by dragging
+       the edges instead of getting stuck trying to scroll past the map. */
+    padding: 0 32px;
   }
 
   .game-header { padding: 0.25rem 0; }
