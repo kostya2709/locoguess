@@ -104,7 +104,7 @@ function GooglePicker({ position, onPositionChange, height = '250px' }: Props) {
           onClick={handleOpenStreetView}
           title={position ? 'Панорама из этой точки' : 'Панорама'}
         >
-          🔭
+          🔍
         </button>
 
         {streetView && (

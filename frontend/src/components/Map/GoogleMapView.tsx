@@ -194,7 +194,7 @@ export function GoogleMapView(props: GameMapProps) {
             onClick={handleOpenStreetView}
             title={props.guessPosition ? 'Панорама из этой точки' : 'Панорама (выберите точку)'}
           >
-            🔭
+            🔍
           </button>
         )}
 
