@@ -123,19 +123,32 @@ export function JoinPage() {
     }
   }
 
-  // If game is already playing, go straight to game
+  // If game is already playing AND our stored player is actually in this game,
+  // jump straight to /play. Without the presence check, a stale localStorage
+  // session from a previous game would redirect to /play with ghost state.
   useEffect(() => {
-    if (gameStatus?.status === 'playing' && player) {
-      navigate('/play');
-    }
+    if (gameStatus?.status !== 'playing' || !player) return;
+    const stillPresent = gameStatus.teams.some(
+      (t) => t.players.some((pl) => pl.id === player.id),
+    );
+    if (stillPresent) navigate('/play');
   }, [gameStatus, player, navigate]);
 
-  if (noGame) {
+  // Show the waiting screen when there's no game yet, OR when a stale
+  // game is still in play/finished state and we're not part of it.
+  const playerIsInGame = player && gameStatus
+    ? gameStatus.teams.some((t) => t.players.some((pl) => pl.id === player.id))
+    : false;
+  const showWaiting =
+    noGame ||
+    (gameStatus !== null && gameStatus.status !== 'lobby' && !playerIsInGame);
+
+  if (showWaiting) {
     return (
       <div className="join-page">
         <BackButton to="/" />
         <h1>Присоединиться</h1>
-        <div className="waiting-message">Игра ещё не создана. Ждём ведущего...</div>
+        <div className="waiting-message">Ждём, пока ведущий начнёт игру...</div>
       </div>
     );
   }

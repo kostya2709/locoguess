@@ -5,6 +5,10 @@ services:
       LOCOGUESS_DATABASE_URL: "sqlite:///./data/locoguess.db"
       LOCOGUESS_PHOTOS_DIR: "/app/photos"
       LOCOGUESS_CORS_ORIGINS: '["http://localhost"]'
+      # Optional admin password. Gate the "Начать игру" and "Наборы" buttons.
+      # Set via a .env file next to this compose file (e.g. LOCOGUESS_ADMIN_PASSWORD=2604),
+      # or leave unset to keep the gate off for local dev.
+      LOCOGUESS_ADMIN_PASSWORD: "${LOCOGUESS_ADMIN_PASSWORD:-}"
     volumes:
       - db-data:/app/data
       - photos:/app/photos
@@ -12,7 +16,12 @@ services:
       - "8000"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Map provider baked into the Vite bundle. Default google; the
+        # offline-mode override flips this to leaflet.
+        VITE_MAP_PROVIDER: "${VITE_MAP_PROVIDER:-google}"
     ports:
       - "0.0.0.0:80:80"
     depends_on:

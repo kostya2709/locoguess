@@ -28,6 +28,9 @@ offline/tiles/
 # Offline mode — POI list is deployment-specific, generated from live DB
 offline/pois.csv
 
+# Claude Code local state
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -6,6 +6,7 @@ import string
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.admin import verify_admin_token
 from app.database import get_db
 from app.models import Game, GamePack, GameStatus
 from app.models.game import Round
@@ -60,7 +61,7 @@ def _get_game(join_code: str, db: Session) -> Game:
     return game
 
 
-@router.post("/games", response_model=GameCreateResponse, status_code=201)
+@router.post("/games", response_model=GameCreateResponse, status_code=201, dependencies=[Depends(verify_admin_token)])
 def create_game(body: GameCreate, db: Session = Depends(get_db)):
     """Create a new game. If pack_id is provided, rounds are auto-created from the pack."""
     db_pack = None
@@ -116,7 +117,7 @@ def get_game(join_code: str, db: Session = Depends(get_db)):
     return _get_game(join_code, db)
 
 
-@router.patch("/games/{join_code}", response_model=GameResponse)
+@router.patch("/games/{join_code}", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 def update_game(join_code: str, body: GameUpdate, db: Session = Depends(get_db)):
     """Update game settings while in lobby (before starting)."""
     game = _get_game(join_code, db)
@@ -233,7 +234,7 @@ def claim_host(join_code: str, body: ClaimHost, db: Session = Depends(get_db)):
     return ClaimHostResponse(is_host=True, rounds_configured=rounds_configured)
 
 
-@router.post("/games/{join_code}/start", response_model=GameResponse)
+@router.post("/games/{join_code}/start", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 async def start_game(join_code: str, db: Session = Depends(get_db)):
     """Start a game, transitioning from LOBBY to PLAYING."""
     game = _get_game(join_code, db)
@@ -245,7 +246,7 @@ async def start_game(join_code: str, db: Session = Depends(get_db)):
     return game
 
 
-@router.post("/games/{join_code}/next-round", response_model=GameResponse)
+@router.post("/games/{join_code}/next-round", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 async def next_round(join_code: str, db: Session = Depends(get_db)):
     """Advance to the next round (host action). Starts the next round or finishes the game."""
     game = _get_game(join_code, db)
@@ -257,7 +258,7 @@ async def next_round(join_code: str, db: Session = Depends(get_db)):
     return game
 
 
-@router.post("/games/{join_code}/end-game", response_model=GameResponse)
+@router.post("/games/{join_code}/end-game", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 async def end_game(join_code: str, db: Session = Depends(get_db)):
     """End the game early (host action). Redirects all clients to home."""
     game = _get_game(join_code, db)
@@ -269,7 +270,7 @@ async def end_game(join_code: str, db: Session = Depends(get_db)):
     return game
 
 
-@router.post("/games/{join_code}/set-photo")
+@router.post("/games/{join_code}/set-photo", dependencies=[Depends(verify_admin_token)])
 async def set_photo_index(join_code: str, body: dict, db: Session = Depends(get_db)):
     """Host changes which photo is displayed (for rounds with multiple photos)."""
     from app.utils import get_photo_urls
@@ -292,7 +293,7 @@ async def set_photo_index(join_code: str, body: dict, db: Session = Depends(get_
     return {"ok": True}
 
 
-@router.post("/games/{join_code}/timer/pause")
+@router.post("/games/{join_code}/timer/pause", dependencies=[Depends(verify_admin_token)])
 def pause_timer(join_code: str, db: Session = Depends(get_db)):
     """Pause the round timer (host action)."""
     game = _get_game(join_code, db)
@@ -301,7 +302,7 @@ def pause_timer(join_code: str, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.post("/games/{join_code}/timer/resume")
+@router.post("/games/{join_code}/timer/resume", dependencies=[Depends(verify_admin_token)])
 def resume_timer(join_code: str, db: Session = Depends(get_db)):
     """Resume the round timer (host action)."""
     game = _get_game(join_code, db)
@@ -310,7 +311,7 @@ def resume_timer(join_code: str, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.post("/games/{join_code}/timer/reset")
+@router.post("/games/{join_code}/timer/reset", dependencies=[Depends(verify_admin_token)])
 def reset_timer(join_code: str, db: Session = Depends(get_db)):
     """Reset the round timer to original duration (host action)."""
     game = _get_game(join_code, db)
@@ -319,7 +320,7 @@ def reset_timer(join_code: str, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.post("/games/{join_code}/replay-round", response_model=GameResponse)
+@router.post("/games/{join_code}/replay-round", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 async def replay_round(join_code: str, db: Session = Depends(get_db)):
     """Replay the current round (host action). Deletes guesses and restarts."""
     game = _get_game(join_code, db)
@@ -331,7 +332,7 @@ async def replay_round(join_code: str, db: Session = Depends(get_db)):
     return game
 
 
-@router.post("/games/{join_code}/replay-game", response_model=GameResponse)
+@router.post("/games/{join_code}/replay-game", response_model=GameResponse, dependencies=[Depends(verify_admin_token)])
 async def replay_game(join_code: str, db: Session = Depends(get_db)):
     """Replay the entire game from round 1 (host action). Deletes all guesses."""
     game = _get_game(join_code, db)

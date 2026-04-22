@@ -535,6 +535,78 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+/* Admin password prompt — centered modal. */
+.admin-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.admin-prompt {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.admin-prompt h3 { margin: 0 0 0.25rem; }
+.admin-prompt p { margin: 0 0 1rem; color: var(--text-muted); }
+.admin-prompt input {
+  width: 100%;
+  padding: 0.6rem;
+  font-size: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  letter-spacing: 0.2em;
+  text-align: center;
+  box-sizing: border-box;
+}
+.admin-prompt-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.admin-prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+.admin-prompt-actions button {
+  min-width: 80px;
+  padding: 0.5rem 1rem;
+}
+
+/* Wedding monogram on the home page — centered above the title. */
+.wedding-logo-hero {
+  display: block;
+  margin: 1rem auto 0.5rem;
+  max-width: 140px;
+  height: auto;
+  user-select: none;
+}
+
+/* Wedding monogram at the bottom-right of the game page — players scroll
+   down past the scoreboard to notice it. */
+.wedding-logo-corner {
+  display: block;
+  margin: 2rem 0 1rem auto;
+  max-width: 64px;
+  height: auto;
+  opacity: 0.55;
+  user-select: none;
+}
+
+@media (max-width: 768px) {
+  .wedding-logo-hero { max-width: 90px; }
+  .wedding-logo-corner { max-width: 48px; }
+}
 .music-unblock-btn {
   width: 32px;
   height: 32px;

@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.admin import verify_admin_token
 from app.config import settings
 from app.database import get_db
 from app.models.pack import GamePack, PackRound
@@ -20,7 +21,11 @@ from app.schemas.pack import (
 )
 from app.utils import get_photo_urls
 
-router = APIRouter(prefix="/api/v1/packs", tags=["packs"])
+router = APIRouter(
+    prefix="/api/v1/packs",
+    tags=["packs"],
+    dependencies=[Depends(verify_admin_token)],
+)
 
 
 def _round_info(r: PackRound) -> PackRoundInfo:

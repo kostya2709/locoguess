@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.admin import verify_admin_token
 from app.config import settings
 from app.database import get_db
 from app.models import Game, GameStatus, Guess, Player, Round, RoundStatus
@@ -26,7 +27,7 @@ def _get_game(join_code: str, db: Session) -> Game:
     return game
 
 
-@router.post("/upload-photo")
+@router.post("/upload-photo", dependencies=[Depends(verify_admin_token)])
 async def upload_photo(join_code: str, file: UploadFile):
     """Upload a photo file. Returns the filename to use when adding a round."""
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -42,7 +43,7 @@ async def upload_photo(join_code: str, file: UploadFile):
     return {"filename": filename}
 
 
-@router.post("", response_model=RoundInfo, status_code=201)
+@router.post("", response_model=RoundInfo, status_code=201, dependencies=[Depends(verify_admin_token)])
 def add_round(join_code: str, body: RoundCreate, db: Session = Depends(get_db)):
     """Add a round to a game (admin/setup endpoint)."""
     game = _get_game(join_code, db)

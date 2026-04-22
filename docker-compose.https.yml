@@ -14,6 +14,8 @@ services:
   backend:
     environment:
       LOCOGUESS_CORS_ORIGINS: '["https://locoguess.ru","https://www.locoguess.ru","http://locoguess.ru","http://www.locoguess.ru"]'
+      # LOCOGUESS_ADMIN_PASSWORD is inherited from the base compose file's
+      # environment block (which passes it through from the host env).
 
   frontend:
     build:

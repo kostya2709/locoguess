@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     round_duration: int = 60  # seconds
     reveal_duration: int = 10  # seconds between reveal and next round
     cors_origins: list[str] = ["http://localhost:5173"]
+    # Optional admin password. Empty string = no gate (dev default). When set
+    # (typically on a public deploy), admin endpoints require X-Admin-Token
+    # header containing a token obtained via POST /api/v1/admin/verify.
+    admin_password: str = ""
 
     model_config = {"env_prefix": "LOCOGUESS_"}
 

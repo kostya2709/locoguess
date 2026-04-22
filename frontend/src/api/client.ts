@@ -5,12 +5,31 @@ const BASE = '/api/v1';
 /** Single room code — no multi-room support for now. */
 export const GAME_CODE = 'GAME01';
 
+const ADMIN_TOKEN_KEY = 'locoguess_admin_token';
+
+export function getAdminToken(): string | null {
+  return localStorage.getItem(ADMIN_TOKEN_KEY);
+}
+
+export function setAdminToken(token: string) {
+  localStorage.setItem(ADMIN_TOKEN_KEY, token);
+}
+
+export function clearAdminToken() {
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+  const token = getAdminToken();
+  if (token) headers['X-Admin-Token'] = token;
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (!res.ok) {
+    // If an admin-gated endpoint returns 401, our stored token is stale.
+    if (res.status === 401) clearAdminToken();
     const body = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(body.detail || `HTTP ${res.status}`);
   }
@@ -83,6 +102,16 @@ export interface PackDetail {
 }
 
 export const api = {
+  // Admin-password verification. Returns a session token to include as
+  // X-Admin-Token on subsequent admin calls. Called before navigating to
+  // /host or /marketplace.
+  verifyAdmin(password: string) {
+    return request<{ token: string }>('/admin/verify', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  },
+
   // Pack CRUD
   getPacks() {
     return request<PackInfo[]>('/packs');

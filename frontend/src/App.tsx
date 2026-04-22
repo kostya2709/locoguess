@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { HostSetupPage } from './pages/HostSetupPage';
 import { HostLobbyPage } from './pages/HostLobbyPage';
@@ -10,7 +10,16 @@ import { ResultsPage } from './pages/ResultsPage';
 import { NicknamePrompt } from './components/common/NicknamePrompt';
 import { UserBadge } from './components/common/UserBadge';
 import { useServerRestart } from './hooks/useServerRestart';
+import weddingLogo from './assets/wedding-logo.png';
 import './App.css';
+
+/** Small wedding-monogram badge at the bottom of every page except the
+ *  home page (which shows it full-size as a hero above the title). */
+function WeddingLogoCorner() {
+  const location = useLocation();
+  if (location.pathname === '/') return null;
+  return <img src={weddingLogo} alt="" className="wedding-logo-corner" />;
+}
 
 /** Wrapper that runs the server restart check inside the router context. */
 function ServerRestartGuard({ children }: { children: React.ReactNode }) {
@@ -54,6 +63,7 @@ export default function App() {
           <Route path="/play" element={<GamePage />} />
           <Route path="/results" element={<ResultsPage />} />
         </Routes>
+        <WeddingLogoCorner />
       </div>
       </ServerRestartGuard>
     </BrowserRouter>
