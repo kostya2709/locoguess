@@ -25,6 +25,9 @@ frontend/dist/
 # Offline mode — downloaded OSM tiles (can be many GB)
 offline/tiles/
 
+# Offline mode — POI list is deployment-specific, generated from live DB
+offline/pois.csv
+
 # OS
 .DS_Store
 Thumbs.db

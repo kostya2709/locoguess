@@ -27,6 +27,25 @@ If you bump `RUSSIA_MAX_ZOOM`, also bump `VITE_MAX_ZOOM` in
 `docker-compose.offline.yml` to match so Leaflet will actually request those
 zoom levels.
 
+## Optional: higher zoom around specific places (POIs)
+
+For extra detail only around the locations used in your packs (instead of
+paying for Russia-wide z10+), generate a POI list from the live DB and
+download tiles only there:
+
+```bash
+python3 offline/extract-pois.py            # writes offline/pois.csv from the DB
+POI_MAX_ZOOM=11 python3 offline/download-tiles.py   # adds z10+z11 around each POI
+```
+
+The defaults: 10 km radius per POI, reads from `offline/pois.csv`. The CSV
+line format is `lat,lng,radius_km,name` (radius and name optional). Set
+`POI_DEFAULT_RADIUS_KM=20` or edit the CSV to tweak.
+
+Bump `VITE_MAX_ZOOM` in `docker-compose.offline.yml` to match your
+`POI_MAX_ZOOM` so Leaflet requests the higher levels. Outside POI circles
+at high zoom, Leaflet shows gray squares — expected.
+
 ## Run the game offline
 
 ```bash

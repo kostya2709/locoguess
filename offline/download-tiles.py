@@ -29,6 +29,10 @@ from pathlib import Path
 
 WORLD_MAX_ZOOM = int(os.environ.get('WORLD_MAX_ZOOM', '4'))
 RUSSIA_MAX_ZOOM = int(os.environ.get('RUSSIA_MAX_ZOOM', '8'))
+# Per-POI high-zoom coverage. Disabled unless POI_MAX_ZOOM > RUSSIA_MAX_ZOOM.
+POI_MAX_ZOOM = int(os.environ.get('POI_MAX_ZOOM', '0'))
+POI_FILE = Path(os.environ.get('POI_FILE', Path(__file__).parent / 'pois.csv'))
+POI_DEFAULT_RADIUS_KM = float(os.environ.get('POI_DEFAULT_RADIUS_KM', '10'))
 TILES_DIR = Path(os.environ.get('TILES_DIR', Path(__file__).parent / 'tiles'))
 USER_AGENT = os.environ.get('USER_AGENT', 'LocoGuess-Offline/1.0')
 RATE_LIMIT = float(os.environ.get('RATE_LIMIT', '2.0'))
@@ -64,6 +68,34 @@ def tiles_for_bbox(bbox, zoom: int):
             yield x, y
 
 
+def load_pois() -> list[tuple[float, float, float]]:
+    """Read POIs (lat, lng, radius_km) from POI_FILE. Returns [] if missing."""
+    if not POI_FILE.exists():
+        return []
+    out = []
+    for raw in POI_FILE.read_text(encoding='utf-8').splitlines():
+        line = raw.strip()
+        if not line or line.startswith('#'):
+            continue
+        parts = line.split(',')
+        try:
+            lat = float(parts[0])
+            lng = float(parts[1])
+            radius = float(parts[2]) if len(parts) > 2 and parts[2].strip() else POI_DEFAULT_RADIUS_KM
+        except (IndexError, ValueError):
+            print(f"  ! bad POI line, skipped: {line!r}", file=sys.stderr)
+            continue
+        out.append((lat, lng, radius))
+    return out
+
+
+def poi_bbox(lat: float, lng: float, radius_km: float):
+    """Approx bounding box around a point given a km radius."""
+    deg_lat = radius_km / 111.0
+    deg_lng = deg_lat / max(0.01, math.cos(math.radians(lat)))
+    return (lat + deg_lat, lat - deg_lat, lng - deg_lng, lng + deg_lng)
+
+
 def collect_tiles() -> list[tuple[int, int, int]]:
     seen = set()
     # Whole world at low zoom.
@@ -72,11 +104,18 @@ def collect_tiles() -> list[tuple[int, int, int]]:
         for x in range(n):
             for y in range(n):
                 seen.add((z, x, y))
-    # Russia only at high zoom.
+    # Russia only at medium zoom.
     for z in range(WORLD_MAX_ZOOM + 1, RUSSIA_MAX_ZOOM + 1):
         for bbox in RUSSIA_BBOXES:
             for x, y in tiles_for_bbox(bbox, z):
                 seen.add((z, x, y))
+    # Per-POI coverage at high zoom (only if POI_MAX_ZOOM is set beyond Russia).
+    if POI_MAX_ZOOM > RUSSIA_MAX_ZOOM:
+        pois = load_pois()
+        for z in range(RUSSIA_MAX_ZOOM + 1, POI_MAX_ZOOM + 1):
+            for lat, lng, radius_km in pois:
+                for x, y in tiles_for_bbox(poi_bbox(lat, lng, radius_km), z):
+                    seen.add((z, x, y))
     return sorted(seen)
 
 
@@ -100,9 +139,12 @@ def main():
     tiles = collect_tiles()
     delay = 1.0 / RATE_LIMIT
     eta_min = len(tiles) * delay / 60
+    plan = f"world z0..{WORLD_MAX_ZOOM} + Russia z{WORLD_MAX_ZOOM + 1}..{RUSSIA_MAX_ZOOM}"
+    if POI_MAX_ZOOM > RUSSIA_MAX_ZOOM:
+        poi_count = len(load_pois())
+        plan += f" + {poi_count} POIs z{RUSSIA_MAX_ZOOM + 1}..{POI_MAX_ZOOM}"
     print(
-        f"Plan: {len(tiles):,} tiles "
-        f"(world z0..{WORLD_MAX_ZOOM} + Russia z{WORLD_MAX_ZOOM + 1}..{RUSSIA_MAX_ZOOM}). "
+        f"Plan: {len(tiles):,} tiles ({plan}). "
         f"At {RATE_LIMIT} req/s worst case ETA: {eta_min:.0f} min.",
         file=sys.stderr,
     )

@@ -14,6 +14,6 @@ services:
       args:
         VITE_MAP_PROVIDER: leaflet
         VITE_TILE_URL: /tiles/{z}/{x}/{y}.png
-        VITE_MAX_ZOOM: "9"
+        VITE_MAX_ZOOM: "11"
     volumes:
       - ./offline/tiles:/usr/share/nginx/html/tiles:ro
