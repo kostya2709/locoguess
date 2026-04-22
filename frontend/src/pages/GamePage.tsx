@@ -296,7 +296,7 @@ export function GamePage() {
           </button>
         )}
         <button
-          className="menu-btn"
+          className="menu-btn browser-fullscreen-btn"
           onClick={toggleBrowserFullscreen}
           title={browserFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
         >

@@ -847,6 +847,11 @@
   .game-header { padding: 0.25rem 0; }
   .timer { font-size: 1.2rem; }
 
+  /* Hide the general browser-fullscreen toggle on mobile — Fullscreen API is
+     unreliable on mobile browsers (unsupported on iOS Safari) and users
+     typically manage fullscreen via the OS / browser controls themselves. */
+  .browser-fullscreen-btn { display: none; }
+
   /* Make photo/map panels take proper height on mobile */
   .photo-panel, .map-panel { min-height: 35vh; }
 

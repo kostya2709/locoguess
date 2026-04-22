@@ -97,7 +97,7 @@ function GoogleMapInner(props: GameMapProps & { onMapReady: (map: google.maps.Ma
       defaultCenter={{ lat: 62, lng: 95 }}
       defaultZoom={3}
       minZoom={3}
-      gestureHandling="greedy"
+      gestureHandling="cooperative"
       disableDefaultUI={true}
       zoomControl={true}
       mapId="locoguess-map"
