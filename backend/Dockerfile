@@ -2,12 +2,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install dependencies first for better layer caching
+# pyproject.toml declares packages = ["app"], so app/ has to be present for
+# the build to resolve. photos/ and seed.py are copied afterwards so changing
+# a photo doesn't force a dependency reinstall.
 COPY pyproject.toml .
+COPY app/ app/
 RUN pip install --no-cache-dir .
 
-# Copy application code
-COPY app/ app/
 COPY photos/ photos/
 COPY seed.py .
 
