@@ -42,7 +42,7 @@ cd backend
 .venv/bin/python -m pytest                     # Run all tests
 .venv/bin/python -m pytest tests/test_api.py   # Run specific test file
 .venv/bin/python -m pytest -k "test_haversine" # Run tests matching pattern
-.venv/bin/uvicorn app.main:app --reload        # Start dev server (port 8000)
+.venv/bin/uvicorn app.main:app --reload --port 8002  # Dev server (8002 = what the Vite proxy targets)
 .venv/bin/python seed.py                       # Seed demo game data
 .venv/bin/ruff check app/ tests/               # Lint
 ```

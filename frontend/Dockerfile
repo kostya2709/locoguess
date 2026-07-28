@@ -11,10 +11,12 @@ COPY . .
 ARG VITE_MAP_PROVIDER=""
 ARG VITE_TILE_URL=""
 ARG VITE_MAX_ZOOM=""
+ARG VITE_GOOGLE_MAPS_API_KEY=""
 RUN touch .env.local \
     && { [ -n "$VITE_MAP_PROVIDER" ] && echo "VITE_MAP_PROVIDER=$VITE_MAP_PROVIDER" >> .env.local || :; } \
     && { [ -n "$VITE_TILE_URL" ] && echo "VITE_TILE_URL=$VITE_TILE_URL" >> .env.local || :; } \
-    && { [ -n "$VITE_MAX_ZOOM" ] && echo "VITE_MAX_ZOOM=$VITE_MAX_ZOOM" >> .env.local || :; }
+    && { [ -n "$VITE_MAX_ZOOM" ] && echo "VITE_MAX_ZOOM=$VITE_MAX_ZOOM" >> .env.local || :; } \
+    && { [ -n "$VITE_GOOGLE_MAPS_API_KEY" ] && echo "VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY" >> .env.local || :; }
 
 RUN npm run build
 

@@ -13,6 +13,15 @@ dependencies = [
     "websockets>=12.0",
 ]
 
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# Without this, setuptools' flat-layout auto-discovery sees `app/`, `photos/`
+# and `tests/` as competing top-level packages and refuses to build.
+[tool.setuptools]
+packages = ["app"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",

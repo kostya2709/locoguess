@@ -19,9 +19,13 @@ services:
     build:
       context: ./frontend
       args:
-        # Map provider baked into the Vite bundle. Default google; the
-        # offline-mode override flips this to leaflet.
-        VITE_MAP_PROVIDER: "${VITE_MAP_PROVIDER:-google}"
+        # Map provider baked into the Vite bundle. Defaults to leaflet so a
+        # fresh clone works with no configuration at all. Set
+        # VITE_MAP_PROVIDER=google (plus VITE_GOOGLE_MAPS_API_KEY) in a .env
+        # file next to this compose file to use Google Maps; the HTTPS
+        # override hardcodes google for the public deployment.
+        VITE_MAP_PROVIDER: "${VITE_MAP_PROVIDER:-leaflet}"
+        VITE_GOOGLE_MAPS_API_KEY: "${VITE_GOOGLE_MAPS_API_KEY:-}"
     ports:
       - "0.0.0.0:80:80"
     depends_on:
